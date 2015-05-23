@@ -1,0 +1,86 @@
+---
+title: "Machine Learning Course Project"
+author: "Dmitry Ermakov"
+date: "March 14, 2015"
+output: html_document
+---
+
+## Description of theproblem##
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behaviour, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
+
+##The goal of this project##
+The goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data Sources
+The training data for this project are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+The test data are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+##Getting the data
+ All data files were downloaded from previously mentioned sources to working directory. Loading datasets.
+```{r,cache=TRUE}
+df <- read.csv("pml-training.csv", na.strings=c("NA","#DIV/0!",""))
+dim(df)
+finTest <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!",""))
+dim(finTest)
+```
+##Cleaning up the data##
+Remove columns without data and remove first 7 columnes not related to the rpoject.
+```{r}
+df <-df[, colSums(is.na(df)) == 0]
+df <- df[,-c(1:7)]
+dim(df)
+```
+
+After cleaning we have the data set with 19622 obs and 53 variables.
+Let's take a look at the data distribution by variable **classe**
+```{r}
+plot(df$classe, xlab="classe", ylab='frequency')
+```
+
+#Splitting the data into trainig and testing data sets#
+We divide the main data into a training set of 75% and a testing set of 25%.
+```{r}
+library(caret)
+TrainIn <- createDataPartition(df$classe, p=0.75, list = FALSE)
+traindf <- df[TrainIn,]
+testdf <- df[-TrainIn,]
+```
+We use RandomForest method to build model for classification and regression. This method reduces nonlinear features and overfitting.
+```{r,cache=TRUE}
+library(randomForest)
+set.seed(333)
+#rfmodel <- randomForest(classe ~. , data=traindf, importance=TRUE)
+#save(rfmodel,file="rfmodel.RData") #remove after debuging
+load("rfmodel.RData") #remove after debuging
+print(rfmodel)
+```
+Cross-validating by using the test part of the data set with the training data set.
+```{r}
+rfprediction <- predict(rfmodel, testdf)
+confusionMatrix(rfprediction, testdf$classe)
+```
+We get the great accuracy of 0.999, 95% CI : (0.993, 0.997). The RandomForest is a good enough method and we don't need to test any other.
+```{r}
+plot(rfmodel)
+```
+
+## Importance of variables 
+The first 5 most important variables:
+```{r}
+head(rfmodel$importance, n = 5)
+```
+
+## Predict answers for 20 samples and generate files for sumbmitting. 
+We use provided test set out-of-sample error.
+```{r}
+result <- predict(rfmodel, finTest)
+print(result)
+#result <- as.character(result)
+#pml_write_files(result)
+```
+
+
