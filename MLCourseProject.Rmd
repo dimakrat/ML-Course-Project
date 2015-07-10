@@ -5,7 +5,7 @@ date: "March 14, 2015"
 output: html_document
 ---
 
-## Description of theproblem##
+## Description of the problem##
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behaviour, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it.
 
 ##The goal of this project##
@@ -45,25 +45,30 @@ plot(df$classe, xlab="classe", ylab='frequency')
 We divide the main data into a training set of 75% and a testing set of 25%.
 ```{r}
 library(caret)
+library(randomForest)
 TrainIn <- createDataPartition(df$classe, p=0.75, list = FALSE)
 traindf <- df[TrainIn,]
 testdf <- df[-TrainIn,]
 ```
+
+## Building the model
 We use RandomForest method to build model for classification and regression. This method reduces nonlinear features and overfitting.
 ```{r,cache=TRUE}
 library(randomForest)
 set.seed(333)
-#rfmodel <- randomForest(classe ~. , data=traindf, importance=TRUE)
-#save(rfmodel,file="rfmodel.RData") #remove after debuging
-load("rfmodel.RData") #remove after debuging
+rfmodel <- randomForest(classe ~. , data=traindf, importance=TRUE)
 print(rfmodel)
 ```
-Cross-validating by using the test part of the data set with the training data set.
+The out-of-bag(OOB) error rate 0.41% by the model is good to estimate **out of sample error rate**. 
+
+## Cross Valodation and Out of Sample Error rate
+Cross-validating by using the model with the test data set and provided sample tasting data set to produce
 ```{r}
+
 rfprediction <- predict(rfmodel, testdf)
 confusionMatrix(rfprediction, testdf$classe)
 ```
-We get the great accuracy of 0.999, 95% CI : (0.993, 0.997). The RandomForest is a good enough method and we don't need to test any other.
+We get the great accuracy of 99.55 which shows **out of sample error rate** is **0.45%**. The RandomForest is a good enough method and we don't need to test any other.
 ```{r}
 plot(rfmodel)
 ```
@@ -75,7 +80,7 @@ head(rfmodel$importance, n = 5)
 ```
 
 ## Predict answers for 20 samples and generate files for sumbmitting. 
-We use provided test set out-of-sample error.
+We use provided test data set.
 ```{r}
 result <- predict(rfmodel, finTest)
 print(result)
